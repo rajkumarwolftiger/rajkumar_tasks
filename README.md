@@ -9,29 +9,25 @@ This document serves as a guide to setting up the environment, executing the pip
 The project is organized into the following structure to maintain clarity and separation of concerns.
 
 ```
-task/-
+<directory name>/-
 |
-|-- scripts/
-|     |
-|     |-- nptel_data
-|     |       |
-|     |       |--audio #Having audio file
-|     |       |--processed_audio #processed audio from task2 with the (WAV format, with a
-|     |       |                   16KHz sampling rate, mono channel format)
-|     |       |-- processed_transcripts #process pdf - txt file
-|     |       |-- train_manifest.jsonl #created by task4
-|     |       |-- transcripts #contain pdf file from task 1
-|     |
-|     |--task1.py
-|     |--task2_process_audio.sh
-|     |--task3_process_text.py
-|     |--task4_manifest_file.py
-|     |--task5_dashboard.py
+|--nptel_data/-
+|      |
+|      |--audio #Having audio file (.mp3)
+|      |--processed_transcripts (.txt)
+|      |--train_manifest.jsonl
+|      |--transcripts (.pdf)
+|
+|--task1.py
+|--task2_process_audio.sh
+|--task2_process_audio.py
+|--task3_process_text.py
+|--task4_manifest_file.py
+|--task5_dashboard.py
 |
 |--LICENSE
 |--README.md
 |--venv
-
 ```
 
 ## i. Setup Instructions
@@ -98,9 +94,9 @@ chmod +x task2_process_audio.sh
 * *Step2: run the executable file</br>
     run this command to execute the file and put the input_directory, output_directory and number of **cup's** at the end of the code here is the code.*
 ```bash
-./task2_process_audio.sh ~/rajkumar_tasks/scripts/nptel_data/audio / ~/rajkumar_tasks/scripts/nptel_data/processed_audio / 4
+./task2_process_audio.sh nptel_data/audio nptel_data/processed_audio 4
 ```
-*this way we get the ```16kHz mono WAV``` inside the trimmed folder.*
+*this way we get the ```16kHz mono WAV``` inside the processed_audio folder.*
 
 ---
 
@@ -130,9 +126,11 @@ python3 task4_manifest_file.py
 
 ### *here is the sample output:*
 ```bash
-{"audio_filepath": "processed_audio/Deep_Learning(CS7015)_Lec_1.1_Biological_Neuron_16k_mono.wav", 
-"duration": 417.681, 
-"text": "hello everyone welcome to lecture of cs  which is the course on deep learning in today’s lecture is going to be a bit non technical we are not going to cover any technical concepts or we only going to talk about a brief or partial history of deep learning so we hear the terms artificial neural networks artificial neurons quite often these days and i just wanted you take you through the journey of where does all these originate from and this history contains several spans across several fields
+{"audio_filepath": "processed_audio/Deep_Learning(CS7015)_Lec_1.1_Biological_Neuron.wav", "duration": 375.72, "text": "hello everyone welcome to lecture one of cs seven thousand and fifteen which is the course on deep learning in todays lecture is going to be a bit nontechnical we are not going to cover any technical concepts we are only going to talk about a brief or partial history of deep learning..."}
+{"audio_filepath": "processed_audio/Deep_Learning(CS7015)_Lec_1.2_From_Spring_to_Winter_of_AI.wav", "duration": 781.272, "text": "and now what we will get into in the next chapter is we will start talking about artificial intelligence and this is titled..."}
+{"audio_filepath": "processed_audio/Deep_Learning(CS7015)_Lec_1.3_The_Deep_Revival.wav", "duration": 435.048, "text": "when this deep revival happened right so in two thousand and six a very important study was or a very importantcontribution was made by hinton and salakut..."}
+{"audio_filepath": "processed_audio/Deep_Learning(CS7015)_Lec_1.4_From_Cats_to_Convolutional_Neural_Networks.wav", "duration": 169.824, "text": "i will talk about the history of convolutional neural networks and i call this part of history as cats and it will become obvious why i call it so so around one thousand nine hundred and fiftynine hubel and wiesel did this famous..."}
+{"audio_filepath": "processed_audio/Deep_Learning(CS7015)_Lec_1.5_Faster,_higher,_stronger.wav", "duration": 125.544, "text": "so now so this is what the progression was right that in two thousand and six people started or the study by hinton and others led to this revival and then people started realizing that deep neural networks and actually be useful a lot of practical applications..."}
 ```
 
 ---
@@ -165,13 +163,22 @@ When testing the download script on a different NPTEL course, I observed that it
 
 ### Task 2: Audio Preprocessing
 - **Challenge - End-of-Lecture Content:** As hinted, listening to the audio revealed that the last 10-20 seconds often contain outro music, credits, or acknowledgments not present in the transcript. This creates a severe audio-text mismatch.
-- **Solution:** I implemented a solution within the `task2_process_audio.sh` script to automatically trim the last 10 seconds from every audio file before any other processing. This is a simple but highly effective heuristic for cleaning up lecture-style content.
+- **Solution:** I implemented a solution based on a fixed-duration trimming heuristic. After observing that the NPTEL lectures have a highly consistent structure, I determined that the non-spoken intro and outro segments have a predictable length.
+    
+    My task2_process_audio.sh script leverages this pattern by taking the start and end trim durations (e.g., 12 and 31 seconds) as command-line arguments. For each audio file, it calculates the new duration and uses a single, efficient ffmpeg command to perform the precise trim, convert the file to 16kHz mono WAV, and normalize the volume. This approach is significantly faster and more computationally efficient than a VAD-based model and is perfectly suited for the uniform structure of this specific dataset.
 - **Parallelization:** Implementing parallel processing in the bash script significantly sped up the audio conversion. The script spawns background processes up to the user-defined CPU limit (`N`), making it scalable for large datasets with thousands of files.
 
 ### Task 3: Text Preprocessing
 - **Challenge - Audio-Text Misalignment:** This was the most critical data quality issue. The PDF transcripts often contained introductory text (e.g., course title, professor's name) that was displayed on a title slide but was not spoken in the audio. The processed audio, after silence trimming, would start with the first spoken words, creating a mismatch.
-- **Solution:** The ideal solution is a manual alignment step where a human listens to the start of each audio clip and cleans the corresponding transcript. For this project's scope, I noted this as a critical next step for quality assurance. An automated approach could involve using a pre-trained ASR model to get a rough transcript of the first few seconds and then perform a string alignment to find the correct starting point in the text, but this is complex.
-- **`num2words` Library:** This library was effective for converting digits to words, which is crucial as STT models learn to map sounds to words, not digits.
+- **Solution:** To solve the critical audio-text misalignment, I implemented a Forced Alignment pipeline using a pre-trained Whisper ASR model. This automated approach is far more accurate than simple heuristics and serves as the gold standard for creating high-quality, synchronized datasets.
+
+    * The task3_process_text.py script works by: Loading the pre-trained whisper-timestamped model. 
+    * For each audio/PDF pair, it provides the full, messy PDF transcript and the corresponding processed audio to the model.
+
+    * The model "listens" to the audio and simultaneously "reads" the text, finding the exact sequence of words from the PDF that are actually spoken in the audio.
+
+    * It then extracts only this aligned text, automatically discarding all non-spoken introductory content.
+    - **`num2words` Library:** This library was effective for converting digits to words, which is crucial as STT models learn to map sounds to words, not digits.
 
 ### Task 5: Dashboard and Metrics
 - **Tool Choice:** I chose **Streamlit** for the dashboard because it allows for rapid development of interactive data applications directly in Python, making it a perfect fit for this pipeline.
