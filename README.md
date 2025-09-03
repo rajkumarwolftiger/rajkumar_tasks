@@ -78,7 +78,6 @@ This Python script downloads the lecture audios and PDF transcripts from a given
     * *It will ask for a youtube link **copy the link from nptel course page [ Course Details --> week1 --> vedio ] the link should look like this ```https://youtu.be/4TC...``` it's a youtube link** copy the link from the  nptel course page and paste it in the ```bash```, when you paste the links press ```ENTER``` on the empty line and then it will start processing the audio*
     * *When the processing is done for youtube link, then it will ask for a transcript link **copy the link from nptel course page [ Course Details --> Downloads --> Transcripts ] transcript  the link should look like this ```https://drive.google.com/file/d/1wuZcBU6Zk...``` it's a google drive link** copy the google drive and paste in the ```bash```, when you paste the link press ```ENTER``` on the empty line and then it will start processing the pdf files.*
 
-#### This is all for task 1.
 ---
 
 ### Step 2: Preprocessing Audio (Task 2)
