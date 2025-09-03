@@ -1,0 +1,16 @@
+requests
+beautifulsoup4
+yt-dlp
+pydub
+pdfplumber
+num2words
+soundfile
+tqdm
+pandas
+jiwer
+streamlit
+matplotlib
+pydub
+torch
+torchaudio
+tqdm
